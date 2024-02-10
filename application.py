@@ -1,46 +1,16 @@
-'''
-import xlrd
+#import modules  yjz3rCj9Jv8
+from tkinter import messagebox
+#from googleapiclient.discovery import build
 import xlsxwriter
 from tkinter import *
 from tkinter import ttk
-import tkinter as tk
-from tkinter import messagebox
-import openpyxl
-from tkinter import filedialog
-import pandas as pd
-
-'''
-
-#Extra modules
-from tkinter import messagebox
-import openpyxl
-from googleapiclient.discovery import build
-import xlsxwriter
-
-from tkinter import *
-from tkinter import ttk
-import time
-from datetime import date
-import xlrd
-#import tensorflow as tf, sys
-#import cv2
 import time
 from tkinter import filedialog
-import tkinter.messagebox
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
-import matplotlib.pyplot as plt
-from wordcloud import WordCloud
-from math import log, sqrt
+from math import log
 import pandas as pd
-import numpy as np
-import re
-##joblib.dump(trainData,'TRAIN.joblib.pkl')
-##joblib.dump(testData,'TEST.joblib.pkl')
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.svm import SVC
-from sklearn.naive_bayes import GaussianNB
 from apiclient.discovery import build
 import numpy as np
 import matplotlib.pyplot as plt
@@ -58,8 +28,20 @@ DEVELOPER_KEY = "AIzaSyCReNA7gPbFdimdisbbpH-5Rs9PNluEYig"
 YOUTUBE_API_SERVICE_NAME = "youtube"
 YOUTUBE_API_VERSION = "v3"
 
-
 def Preprocess_Comments(Comments_Cont, lower_case=True, stem=True, stop_words=True, gram=2):
+    """
+    Preprocesses the given text content of comments.
+
+    Args:
+    - Comments_Cont (str): The text content of comments to be preprocessed.
+    - lower_case (bool): If True, converts the text to lowercase.
+    - stem (bool): If True, performs stemming on the words.
+    - stop_words (bool): If True, removes stopwords from the text.
+    - gram (int): Specifies the n-gram range. If greater than 1, it generates n-grams of the specified size.
+
+    Returns:
+    - list of str: Preprocessed words or n-grams from the comments content.
+    """
     if lower_case:
         Comments_Cont = Comments_Cont.lower()
     words = word_tokenize(Comments_Cont)
@@ -76,7 +58,6 @@ def Preprocess_Comments(Comments_Cont, lower_case=True, stem=True, stop_words=Tr
         stemmer = PorterStemmer()
         words = [stemmer.stem(word) for word in words]
     return words
-
 
 def Comparisisioon():
     h = .02  # step size in the mesh
