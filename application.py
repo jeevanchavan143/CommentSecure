@@ -11,6 +11,7 @@ from nltk.stem import PorterStemmer
 from math import log
 import pandas as pd
 from apiclient.discovery import build
+from rich import print
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
@@ -20,6 +21,14 @@ from sklearn.datasets import make_moons, make_circles, make_classification
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
 from sklearn.naive_bayes import GaussianNB
+
+from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.svm import SVC
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.ensemble import VotingClassifier
+from sklearn.metrics import accuracy_score
 
 
 '''
@@ -40,7 +49,6 @@ if not all([DEVELOPER_KEY, YOUTUBE_API_SERVICE_NAME, YOUTUBE_API_VERSION]):
 DEVELOPER_KEY = "AIzaSyCReNA7gPbFdimdisbbpH-5Rs9PNluEYig"
 YOUTUBE_API_SERVICE_NAME = "youtube"
 YOUTUBE_API_VERSION = "v3"
-
 
 def Preprocess_Comments(Comments_Cont, lower_case=True, stem=True, stop_words=True, gram=2):
     """
@@ -173,30 +181,28 @@ worksheet = workbook.add_worksheet()
 bold = workbook.add_format({'bold': True})
 worksheet.write('A1', 'USERNAME')
 worksheet.write('B1', 'PASSWORD')
-worksheet.write('C1', 'MOBILE NUMBER')
+#worksheet.write('C1', 'MOBILE NUMBER')
 #worksheet.write('D1', 'ROLL NUMBER')
-worksheet.write('E1', 'EMAIL ID')
+#worksheet.write('E1', 'EMAIL ID')
 
 window = Tk()
-window.title("Welcome to COMMENTSECURE:  SPAM DETECTION system")
+window.title("Welcome to CommentSecure :YouTube Spam Detection system")
 window.geometry('800x500')
 
 tab_control = ttk.Notebook(window)
 tab1 = ttk.Frame(tab_control)
 tab2 = ttk.Frame(tab_control)
-tab3 = ttk.Frame(tab_control)
-tab_control.add(tab1, text='USER REGISTRATION')
-tab_control.add(tab2, text='COMMENT SECURE')
+#tab3 = ttk.Frame(tab_control)
+tab_control.add(tab1, text='New User Registration')
+tab_control.add(tab2, text='Comment Secure')
 
 
 #############################################################################################################################################################
 # HEADING
 def show_entry_fields():
-    print("First Name: %s\nLast Name: %s" % (e1.get(), e2.get()))
     Un = e1.get()
     Pw = e2.get()
-    print((Un))
-    res = "PERSON " + Un + " IS ADDED"
+    res = "New User " + Un + " is added"
     lbl1.configure(text=res)
     worksheet.write(str('A' + str(2)), str(Un))
     worksheet.write(str('B' + str(2)), str(Pw))
@@ -208,38 +214,103 @@ def TST_Face():
     Pw = ee2.get()
     VI = ee3.get()
     video_id = VI
-    print('USERNAME', Un)
+    print('User Logged in Successfully :', Un)
     import openpyxl
-
     wb = openpyxl.load_workbook('demo.xlsx')
     sheet = wb.active  # Assuming you want to work with the active sheet
 
     Un1 = sheet.cell(row=2, column=1).value
     Pw1 = sheet.cell(row=2, column=2).value
 
-    #wb = xlrd.open_workbook('demo.xlsx')
-    #sheet = wb.sheet_by_index(0)
-    #Un1 = sheet.cell_value(1, 0)
-    #Pw1 = sheet.cell_value(1, 1)
-    print('UN', Un1);
-    print('PW', Pw1);
     if Un == Un1 and Pw == Pw1:
-        messagebox.showinfo('LOGIN SUCCESSFUL', 'WELCOME')
+        lbl21.configure(text="Login Successful")
     else:
         messagebox.showerror('LOGIN DENIED', 'Wrong Username Or Password')
         window.quit()
         window.destroy()
     # IF LOGIN SUCCESFUL
-    lbl21.configure(text="welcome")
-    image_path = filedialog.askopenfilename(filetypes=(("BROWSE TRAINING FILE", "*.csv"), ("All files", "*")))
-    Comments = pd.read_csv(image_path, encoding='latin-1')
-    Comments.drop(['COMMENT_ID', 'AUTHOR', 'DATE'], axis=1, inplace=True)
-    Comments.rename(columns={'CLASS': 'labels', 'CONTENT': 'Comments_Cont'}, inplace=True)
-    Comments['labels'].value_counts()
-    Comments['label'] = Comments['labels'].map({0: 0, 1: 1})
-    Comments.drop(['labels'], axis=1, inplace=True)
-    totalComments = 300
-    trainIndex, testIndex = list(), list()
+    # Training data from open source dataaset
+    # https://github.com/rahulg-101/Youtube-Comment-Spam-Detection/blob/main/Youtube01.csv
+    csv = pd.read_csv('Youtube01.csv')
+    comments = csv['CONTENT'].to_list()
+    labels = csv['CLASS'].to_list()
+
+    # Splitting the data into training and testing sets
+    X_train, X_test, y_train, y_test = train_test_split(comments, labels, test_size=0.2, random_state=42)
+
+    # Vectorizing the comments using TF-IDF
+    tfidf_vectorizer = TfidfVectorizer(stop_words='english')
+    X_train_tfidf = tfidf_vectorizer.fit_transform(X_train)
+    X_test_tfidf = tfidf_vectorizer.transform(X_test)
+
+    # Initializing classifiers
+    svm_classifier = SVC(kernel='linear', probability=True)
+    knn_classifier = KNeighborsClassifier(n_neighbors=5)
+    nb_classifier = MultinomialNB()
+
+    # Ensemble classifier using voting
+    ensemble_classifier = VotingClassifier(estimators=[
+        ('svm', svm_classifier),
+        ('knn', knn_classifier),
+        ('nb', nb_classifier)
+    ], voting='soft')
+
+    # Training individual classifiers
+    svm_classifier.fit(X_train_tfidf, y_train)
+    knn_classifier.fit(X_train_tfidf, y_train)
+    nb_classifier.fit(X_train_tfidf, y_train)
+    ensemble_classifier.fit(X_train_tfidf, y_train)
+
+    # Predictions
+    svm_pred = svm_classifier.predict(X_test_tfidf)
+    knn_pred = knn_classifier.predict(X_test_tfidf)
+    nb_pred = nb_classifier.predict(X_test_tfidf)
+    ensemble_pred = ensemble_classifier.predict(X_test_tfidf)
+
+    # Accuracy
+    svm_accuracy = accuracy_score(y_test, svm_pred)
+    knn_accuracy = accuracy_score(y_test, knn_pred)
+    nb_accuracy = accuracy_score(y_test, nb_pred)
+    ensemble_accuracy = accuracy_score(y_test, ensemble_pred)
+
+    print("SVM Accuracy:", svm_accuracy)
+    print("KNN Accuracy:", knn_accuracy)
+    print("Naive Bayes Accuracy:", nb_accuracy)
+    print("Ensemble Accuracy:", ensemble_accuracy)
+
+    youtube = build(YOUTUBE_API_SERVICE_NAME, YOUTUBE_API_VERSION, developerKey=DEVELOPER_KEY)
+    video_id = 'cwzp_F8kOHc'  # Change here for different YouTube videos
+    max_results = 5
+    results = youtube.commentThreads().list(videoId=video_id, part="id,snippet", order="relevance",
+                                            textFormat="plainText", maxResults=max_results % 101).execute()
+    comments = [
+        item['snippet']['topLevelComment']['snippet']['textOriginal']
+        for item in results['items']
+    ]
+    comments_tfidf = tfidf_vectorizer.transform(comments)
+    svm_prediction = svm_classifier.predict(comments_tfidf)
+    knn_prediction = knn_classifier.predict(comments_tfidf)
+    nb_prediction = nb_classifier.predict(comments_tfidf)
+    ensemble_prediction = ensemble_classifier.predict(comments_tfidf)
+
+
+    print('predictions: Comment | SVM | KNN | NB | Ensemble')
+    for preds in zip(comments, svm_prediction, knn_prediction, nb_prediction, ensemble_prediction):
+        r = print(f'{preds[0]} | {preds[1]} | {preds[2]} | {preds[3]} | {preds[4]}')
+
+    import sys
+    sys.exit()
+
+    #image_path = filedialog.askopenfilename(filetypes=(("BROWSE TRAINING FILE", "*.csv"), ("All files", "*")))
+    #Comments = pd.read_csv(image_path, encoding='latin-1')
+    #Comments.drop(['COMMENT_ID', 'AUTHOR', 'DATE'], axis=1, inplace=True)
+    #Comments.rename(columns={'CLASS': 'labels', 'CONTENT': 'Comments_Cont'}, inplace=True)
+    #Comments['labels'].value_counts()
+    #Comments['label'] = Comments['labels'].map({0: 0, 1: 1})
+    #Comments.drop(['labels'], axis=1, inplace=True)
+    #totalComments = 300
+    #trainIndex, testIndex = list(), list()
+'''
     for i in range(Comments.shape[0]):
         testIndex += [i]
         trainIndex += [i]
@@ -266,6 +337,9 @@ def TST_Face():
     results = youtube.commentThreads().list(videoId=video_id, part="id,snippet", order="relevance",
                                             textFormat="plainText", maxResults=max_results % 101).execute()
     comments = []
+    '''
+
+'''
     # Extracting required info from each result
     for result in results['items']:
         comment = {}
@@ -279,34 +353,34 @@ def TST_Face():
             RESULT = 'NA'
         elif RESULT == 1:
             RESULT = 'SPAM'
-        # lbl20.configure(text=u)
-        # lbl21.configure(text=RESULT)
+        lbl20.configure(text=u)
+        lbl21.configure(text=RESULT)
         time.sleep(2)
 
-
+'''
 #######################################################################################################
-lbl = Label(tab1, text="STUDENT", font=("Arial Bold", 30), foreground=("red"), background=("white"))
+lbl = Label(tab1, text="CommentSecure : ", font=("Arial Bold", 30), foreground=("blue"), background=("white"))
 lbl.grid(column=0, row=0)
-lbl = Label(tab1, text="REGISTRATION", font=("Arial Bold", 30), foreground=("red"), background=("white"))
+lbl = Label(tab1, text=" Spam", font=("Arial Bold", 30), foreground=("blue"), background=("white"))
 lbl.grid(column=1, row=0)
-lbl = Label(tab1, text="DETAILS", font=("Arial Bold", 30), foreground=("red"), background=("white"))
+lbl = Label(tab1, text="Classifier", font=("Arial Bold", 30), foreground=("blue"), background=("white"))
 lbl.grid(column=2, row=0)
 # USERNAME & PASSWORD ENTRY BOX
 Label(tab1, text="USERNAME", font=("Arial Bold", 15), foreground=("green")).grid(row=1, column=0)
 Label(tab1, text="PASSWORD", font=("Arial Bold", 15), foreground=("green")).grid(row=2, column=0)
-Label(tab1, text="MOBILE NUMBER", font=("Arial Bold", 15), foreground=("green")).grid(row=3, column=0)
-Label(tab1, text="ROLL NUMBER", font=("Arial Bold", 15), foreground=("green")).grid(row=4, column=0)
-Label(tab1, text="EMAIL ID", font=("Arial Bold", 15), foreground=("green")).grid(row=5, column=0)
+#Label(tab1, text="MOBILE NUMBER", font=("Arial Bold", 15), foreground=("green")).grid(row=3, column=0)
+#Label(tab1, text="ROLL NUMBER", font=("Arial Bold", 15), foreground=("green")).grid(row=4, column=0)
+#Label(tab1, text="EMAIL ID", font=("Arial Bold", 15), foreground=("green")).grid(row=5, column=0)
 e1 = Entry(tab1)
 e2 = Entry(tab1)
-e3 = Entry(tab1)
-e4 = Entry(tab1)
-e5 = Entry(tab1)
+#e3 = Entry(tab1)
+#e4 = Entry(tab1)
+#e5 = Entry(tab1)
 e1.grid(row=1, column=1)
 e2.grid(row=2, column=1)
-e3.grid(row=3, column=1)
-e4.grid(row=4, column=1)
-e5.grid(row=5, column=1)
+#e3.grid(row=3, column=1)
+#e4.grid(row=4, column=1)
+#e5.grid(row=5, column=1)
 lbl1 = Label(tab1, text="  STATUS   ", font=("Arial Bold", 10), foreground=("red"), background=("white"))
 lbl1.grid(column=1, row=7)
 Button(tab1, text='CANCEL', command=tab1.quit).grid(row=6, column=1, sticky=W, pady=4)
