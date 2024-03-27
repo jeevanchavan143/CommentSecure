@@ -1,0 +1,66 @@
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.svm import SVC
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.ensemble import VotingClassifier
+from sklearn.metrics import accuracy_score
+
+# Sample data - comments and their labels (0 for non-spam, 1 for spam)
+comments = [
+    "Check out my channel for more great content!",
+    "Great video, thanks for sharing!",
+    "Get free gift cards at www.spam.com",
+    "Click here for amazing deals!!!",
+    "You won a lottery! Claim your prize now!",
+    "Subscribe to my channel for more videos like this.",
+    "Make money online fast and easy!",
+    "This is spam, do not click on the link.",
+    "I love this video, it's so informative.",
+    "Win an iPhone X, just enter your details!"
+]
+labels = [1, 0, 1, 1, 1, 0, 1, 1, 0, 1]
+
+# Splitting the data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(comments, labels, test_size=0.2, random_state=42)
+
+# Vectorizing the comments using TF-IDF
+tfidf_vectorizer = TfidfVectorizer(stop_words='english')
+X_train_tfidf = tfidf_vectorizer.fit_transform(X_train)
+X_test_tfidf = tfidf_vectorizer.transform(X_test)
+
+# Initializing classifiers
+svm_classifier = SVC(kernel='linear', probability=True)
+knn_classifier = KNeighborsClassifier(n_neighbors=5)
+nb_classifier = MultinomialNB()
+
+# Ensemble classifier using voting
+ensemble_classifier = VotingClassifier(estimators=[
+    ('svm', svm_classifier),
+    ('knn', knn_classifier),
+    ('nb', nb_classifier)
+], voting='soft')
+
+# Training individual classifiers
+svm_classifier.fit(X_train_tfidf, y_train)
+knn_classifier.fit(X_train_tfidf, y_train)
+nb_classifier.fit(X_train_tfidf, y_train)
+ensemble_classifier.fit(X_train_tfidf, y_train)
+
+# Predictions
+svm_pred = svm_classifier.predict(X_test_tfidf)
+knn_pred = knn_classifier.predict(X_test_tfidf)
+nb_pred = nb_classifier.predict(X_test_tfidf)
+ensemble_pred = ensemble_classifier.predict(X_test_tfidf)
+
+# Accuracy
+svm_accuracy = accuracy_score(y_test, svm_pred)
+knn_accuracy = accuracy_score(y_test, knn_pred)
+nb_accuracy = accuracy_score(y_test, nb_pred)
+ensemble_accuracy = accuracy_score(y_test, ensemble_pred)
+
+print("SVM Accuracy:", svm_accuracy)
+print("KNN Accuracy:", knn_accuracy)
+print("Naive Bayes Accuracy:", nb_accuracy)
+print("Ensemble Accuracy:", ensemble_accuracy)
