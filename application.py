@@ -1,6 +1,5 @@
-#import modules  yjz3rCj9Jv8
+#import modules  Video ID: yjz3rCj9Jv8
 from tkinter import messagebox
-#from googleapiclient.discovery import build
 import xlsxwriter
 from tkinter import *
 from tkinter import ttk
@@ -23,10 +22,25 @@ from sklearn.svm import SVC
 from sklearn.naive_bayes import GaussianNB
 
 
+'''
+import os
+
+# Accessing environment variables
+DEVELOPER_KEY = os.environ.get("DEVELOPER_KEY")
+YOUTUBE_API_SERVICE_NAME = os.environ.get("YOUTUBE_API_SERVICE_NAME")
+YOUTUBE_API_VERSION = os.environ.get("YOUTUBE_API_VERSION")
+
+# Check if any environment variable is missing
+if not all([DEVELOPER_KEY, YOUTUBE_API_SERVICE_NAME, YOUTUBE_API_VERSION]):
+    raise ValueError("One or more environment variables are not set.")
+
+
+'''
 # arguments to be passed to build function
 DEVELOPER_KEY = "AIzaSyCReNA7gPbFdimdisbbpH-5Rs9PNluEYig"
 YOUTUBE_API_SERVICE_NAME = "youtube"
 YOUTUBE_API_VERSION = "v3"
+
 
 def Preprocess_Comments(Comments_Cont, lower_case=True, stem=True, stop_words=True, gram=2):
     """
@@ -58,93 +72,6 @@ def Preprocess_Comments(Comments_Cont, lower_case=True, stem=True, stop_words=Tr
         stemmer = PorterStemmer()
         words = [stemmer.stem(word) for word in words]
     return words
-
-def Comparisisioon():
-    h = .02  # step size in the mesh
-    names = ["Nearest Neighbors", "Linear SVM", "Naive Bayes"]
-    classifiers = [KNeighborsClassifier(3), SVC(kernel="linear", C=0.025), GaussianNB()]
-
-    X, y = make_classification(n_features=2, n_redundant=0, n_informative=2, random_state=1, n_clusters_per_class=1)
-    rng = np.random.RandomState(2)
-    X += 2 * rng.uniform(size=X.shape)
-    linearly_separable = (X, y)
-    datasets = [make_moons(noise=0.3, random_state=0)]
-
-    figure = plt.figure(figsize=(10, 3))
-    i = 1
-    # iterate over datasets
-    for ds_cnt, ds in enumerate(datasets):
-        # preprocess dataset, split into training and test part
-        X, y = ds
-        print('TRAIN X', np.shape(X))
-        print('TRAIN Y', np.shape(y))
-        X = StandardScaler().fit_transform(X)
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.2, random_state=42)
-
-        x_min, x_max = X[:, 0].min() - .5, X[:, 0].max() + .5
-        y_min, y_max = X[:, 1].min() - .5, X[:, 1].max() + .5
-        xx, yy = np.meshgrid(np.arange(x_min, x_max, h),
-                             np.arange(y_min, y_max, h))
-
-        # just plot the dataset first
-        cm = plt.cm.RdBu
-        cm_bright = ListedColormap(['#FF0000', '#0000FF'])
-        ax = plt.subplot(len(datasets), len(classifiers) + 1, i)
-        if ds_cnt == 0:
-            ax.set_title("Input data")
-        # Plot the training points
-        ax.scatter(X_train[:, 0], X_train[:, 1], c=y_train, cmap=cm_bright,
-                   edgecolors='k')
-        # Plot the testing points
-        ax.scatter(X_test[:, 0], X_test[:, 1], c=y_test, cmap=cm_bright, alpha=0.6,
-                   edgecolors='k')
-        ax.set_xlim(xx.min(), xx.max())
-        ax.set_ylim(yy.min(), yy.max())
-        ax.set_xticks(())
-        ax.set_yticks(())
-        i += 1
-
-        # iterate over classifiers
-        joblib.dump(X_train, 'X_train.joblib.pkl')
-        joblib.dump(y_train, 'y_train.joblib.pkl')
-        joblib.dump(X_test, 'X_test.joblib.pkl')
-        joblib.dump(y_test, 'y_test.joblib.pkl')
-        for name, clf in zip(names, classifiers):
-            ax = plt.subplot(len(datasets), len(classifiers) + 1, i)
-            clf.fit(X_train, y_train)
-            score = clf.score(X_test, y_test)
-
-            # Plot the decision boundary. For that, we will assign a color to each
-            # point in the mesh [x_min, x_max]x[y_min, y_max].
-            if hasattr(clf, "decision_function"):
-                Z = clf.decision_function(np.c_[xx.ravel(), yy.ravel()])
-            else:
-                Z = clf.predict_proba(np.c_[xx.ravel(), yy.ravel()])[:, 1]
-
-            # Put the result into a color plot
-            Z = Z.reshape(xx.shape)
-            ax.contourf(xx, yy, Z, cmap=cm, alpha=.8)
-
-            # Plot the training points
-            ax.scatter(X_train[:, 0], X_train[:, 1], c=y_train, cmap=cm_bright,
-                       edgecolors='k')
-            # Plot the testing points
-            ax.scatter(X_test[:, 0], X_test[:, 1], c=y_test, cmap=cm_bright,
-                       edgecolors='k', alpha=0.6)
-
-            ax.set_xlim(xx.min(), xx.max())
-            ax.set_ylim(yy.min(), yy.max())
-            ax.set_xticks(())
-            ax.set_yticks(())
-            if ds_cnt == 0:
-                ax.set_title(name)
-            ax.text(xx.max() - .3, yy.min() + .3, ('%.2f' % score).lstrip('0'),
-                    size=15, horizontalalignment='right')
-            i += 1
-
-    ##plt.tight_layout()
-    ##plt.show()
-
 
 class Classify_Cascade(object):
     def __init__(sklearn, trainData, method='Proposed'):
@@ -247,19 +174,19 @@ bold = workbook.add_format({'bold': True})
 worksheet.write('A1', 'USERNAME')
 worksheet.write('B1', 'PASSWORD')
 worksheet.write('C1', 'MOBILE NUMBER')
-worksheet.write('D1', 'ROLL NUMBER')
+#worksheet.write('D1', 'ROLL NUMBER')
 worksheet.write('E1', 'EMAIL ID')
 
 window = Tk()
-window.title("Welcome to YOUTUBE SPAM DETECTION system")
+window.title("Welcome to COMMENTSECURE:  SPAM DETECTION system")
 window.geometry('800x500')
 
 tab_control = ttk.Notebook(window)
 tab1 = ttk.Frame(tab_control)
 tab2 = ttk.Frame(tab_control)
 tab3 = ttk.Frame(tab_control)
-tab_control.add(tab1, text='STUDENT REGISTRATION')
-tab_control.add(tab2, text='TOUTUBE SPAM')
+tab_control.add(tab1, text='USER REGISTRATION')
+tab_control.add(tab2, text='COMMENT SECURE')
 
 
 #############################################################################################################################################################
@@ -335,7 +262,7 @@ def TST_Face():
     preds_tf_idf = CLF_fused.predict(testData['Comments_Cont'])
     # Call the comments.list method to retrieve video comments
     youtube = build(YOUTUBE_API_SERVICE_NAME, YOUTUBE_API_VERSION, developerKey=DEVELOPER_KEY)
-    max_results = 10
+    max_results = 20
     results = youtube.commentThreads().list(videoId=video_id, part="id,snippet", order="relevance",
                                             textFormat="plainText", maxResults=max_results % 101).execute()
     comments = []
